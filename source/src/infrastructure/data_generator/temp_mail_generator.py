@@ -15,25 +15,93 @@ class TempMailDataGenerator(IDataGenerator):
     """Gera dados temporários: CPF, CEP e Email."""
 
     _CYBERPUNK_2077_CHARACTERS = [
-        "V",
-        "Johnny Silverhand",
-        "Judy Alvarez",
-        "Panam Palmer",
-        "River Ward",
-        "Kerry Eurodyne",
-        "Jackie Welles",
-        "Takemura",
-        "Hanako Arasaka",
-        "Solomon Reed",
-        "Songbird",
-        "Rogue Amendiares",
-        "Alt Cunningham",
-        "Misty Olszewski",
-        "Mitch Anderson",
-        "Aldecaldo Saul",
-        "Claire Russell",
-        "Placide",
-    ]
+    "Johnny Silverhand",
+    "Judy Alvarez",
+    "Panam Palmer",
+    "River Ward",
+    "Kerry Eurodyne",
+    "Jackie Welles",
+    "Viktor Vektor",
+    "Misty Olszewski",
+    "Claire Russell",
+    "Evelyn Parker",
+    "Alt Cunningham",
+    "Rogue Amendiares",
+
+    "Hanako Arasaka",
+    "Yorinobu Arasaka",
+    "Saburo Arasaka",
+    "Michiko Arasaka",
+    "Adam Smasher",
+    "Anders Hellman",
+
+    "Solomon Reed",
+    "Rosalind Myers",
+    "Alex Xenakis",
+    "Kurt Hansen",
+    "Aurore Cassel",
+    "Aymeric Cassel",
+
+    "Mitch Anderson",
+    "Saul Bright",
+    "Carol Emeka",
+    "Cassidy Righter",
+    "Bob Sagan",
+    "Teddy Simos",
+    "Scorpion Apollo",
+    "Santiago Aldecaldo",
+
+    "Rita Wheeler",
+    "Susie Q",
+    "Lizzy Wizzy",
+
+    "Wakako Okada",
+    "Regina Jones",
+    "Dakota Smith",
+    "Muamar Reyes",
+    "Sebastian Ibarra",
+    "Dino Dinovic",
+
+    "Jefferson Peralez",
+    "Elizabeth Peralez",
+    "Lucius Rhyne",
+
+    "Simon Randall",
+    "Patricia Royce",
+    "Dum Dum",
+
+    "Meredith Stout",
+    "Anthony Gilchrist",
+
+    "Sandra Dorsett",
+    "Joshua Stephenson",
+    "Rachel Casich",
+    "Cesar Diego",
+    "Pepe Najarro",
+    "Mama Welles",
+
+    "Nancy Hartley",
+    "Denny OConnor",
+    "Henry Eurodyne",
+
+    "Morgan Blackhand",
+    "Spider Murphy",
+    "Rache Bartmoss",
+    "Richard Night",
+    "Andrew Weyland",
+    "Trace Santiago",
+    "Shaitan Murphy",
+    "Thompson Carter",
+
+    "Maman Brigitte",
+    "Ti Neptune",
+
+    "Bryce Mosley",
+    "Jeff Grayson",
+    "Woodman Forrest",
+    "Fingers McCoy",
+    "Ozob Bozo",
+]
     
     def __init__(self, rapidapi_key: str = None):
         self.rapidapi_key = self._normalize_api_key(rapidapi_key)
