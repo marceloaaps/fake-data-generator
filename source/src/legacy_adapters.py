@@ -46,7 +46,7 @@ class LegacyDataGeneratorAdapter:
     
     def __init__(self, rapidapi_key: str = None):
         self._generator = Container.get_data_generator()
-        if rapidapi_key:
+        if rapidapi_key is not None:
             self._generator.update_api_key(rapidapi_key)
     
     def generate_cpf(self, formatted: bool = True) -> str:

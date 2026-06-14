@@ -47,7 +47,7 @@ class FileConfigRepository(IConfigRepository):
             },
             "api": {
                 "rapidapi_key": "",
-                "rapidapi_host": "temp-mail.p.rapidapi.com"
+                "rapidapi_host": "privatix-temp-mail-v1.p.rapidapi.com"
             }
         }
         # State whether global hotkeys should be enabled on startup
@@ -97,6 +97,10 @@ class FileConfigRepository(IConfigRepository):
     
     def set(self, key: str, value: Any) -> None:
         """Define um valor (suporta chaves aninhadas com ponto)."""
+        if key == "api.rapidapi_key":
+            # Mantém valor persistido consistente e evita resíduos de espaços.
+            value = "" if value is None else str(value).strip()
+
         keys = key.split('.')
         config = self._config
         

@@ -113,7 +113,7 @@ Conteúdo padrão:
 {
   "api": {
     "rapidapi_key": "sua-chave-aqui",
-    "rapidapi_host": "temp-mail.p.rapidapi.com"
+    "rapidapi_host": "privatix-temp-mail-v1.p.rapidapi.com"
   },
   "hotkeys_enabled": false,
   "startup_with_os": false,

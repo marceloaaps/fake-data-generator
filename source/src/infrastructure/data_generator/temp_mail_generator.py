@@ -3,6 +3,9 @@ Gerador de dados - Implementa IDataGenerator.
 Adaptação do código original data_generator.py
 """
 import random
+import re
+import hashlib
+import string
 import requests
 from typing import Dict, Optional
 from ...domain.interfaces.repositories import IDataGenerator
@@ -12,8 +15,114 @@ class TempMailDataGenerator(IDataGenerator):
     """Gera dados temporários: CPF, CEP e Email."""
     
     def __init__(self, rapidapi_key: str = None):
-        self.rapidapi_key = rapidapi_key
-        self.rapidapi_host = "temp-mail.p.rapidapi.com"
+        self.rapidapi_key = self._normalize_api_key(rapidapi_key)
+        self.rapidapi_host = "privatix-temp-mail-v1.p.rapidapi.com"
+
+    @staticmethod
+    def _normalize_api_key(key: Optional[str]) -> str:
+        """Normaliza a API key removendo espaços e tratando None."""
+        if key is None:
+            return ""
+        return str(key).strip()
+
+    @staticmethod
+    def _extract_email_from_payload(payload) -> str:
+        """Procura um email em payloads aninhados, listas ou strings brutas."""
+        if payload is None:
+            return ""
+
+        if isinstance(payload, str):
+            text = payload.strip()
+            if not text:
+                return ""
+
+            email_match = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text)
+            return email_match.group(0) if email_match else ""
+
+        if isinstance(payload, list):
+            for item in payload:
+                email = TempMailDataGenerator._extract_email_from_payload(item)
+                if email:
+                    return email
+            return ""
+
+        if isinstance(payload, tuple):
+            for item in payload:
+                email = TempMailDataGenerator._extract_email_from_payload(item)
+                if email:
+                    return email
+            return ""
+
+        if isinstance(payload, dict):
+            preferred_keys = (
+                "email",
+                "address",
+                "mail_address",
+                "mail",
+                "mailbox",
+            )
+
+            for key in preferred_keys:
+                email = TempMailDataGenerator._extract_email_from_payload(payload.get(key))
+                if email:
+                    return email
+
+            for value in payload.values():
+                email = TempMailDataGenerator._extract_email_from_payload(value)
+                if email:
+                    return email
+
+        return ""
+
+    @staticmethod
+    def _extract_domains_from_payload(payload) -> list[str]:
+        """Extrai domínios válidos de payloads aninhados retornados pela API."""
+        domains: list[str] = []
+
+        def add_domain(value: str) -> None:
+            value = value.strip().lower().rstrip("./")
+            if value and "." in value and "@" not in value and value not in domains:
+                domains.append(value)
+
+        if payload is None:
+            return domains
+
+        if isinstance(payload, str):
+            text = payload.strip().lower()
+            if not text:
+                return domains
+
+            for candidate in re.findall(r"\b[a-z0-9-]+(?:\.[a-z0-9-]+)+\b", text):
+                add_domain(candidate)
+            return domains
+
+        if isinstance(payload, (list, tuple, set)):
+            for item in payload:
+                for domain in TempMailDataGenerator._extract_domains_from_payload(item):
+                    add_domain(domain)
+            return domains
+
+        if isinstance(payload, dict):
+            preferred_keys = ("domains", "domain", "data", "result", "items")
+
+            for key in preferred_keys:
+                for domain in TempMailDataGenerator._extract_domains_from_payload(payload.get(key)):
+                    add_domain(domain)
+
+            for value in payload.values():
+                for domain in TempMailDataGenerator._extract_domains_from_payload(value):
+                    add_domain(domain)
+
+        return domains
+
+    @staticmethod
+    def _generate_local_part(length: int = 12) -> str:
+        alphabet = string.ascii_lowercase + string.digits
+        return ''.join(random.choice(alphabet) for _ in range(length))
+
+    def _generate_disposable_email(self, domain: str) -> str:
+        local_part = self._generate_local_part()
+        return f"{local_part}@{domain}"
     
     def generate_cpf(self, formatted: bool = True) -> str:
         """
@@ -111,6 +220,14 @@ class TempMailDataGenerator(IDataGenerator):
                 'email': None,
                 'error': 'RapidAPI key não configurada'
             }
+
+        # Chaves RapidAPI válidas costumam ser longas; isso evita requests inúteis
+        # que retornam erros genéricos (como 429) para chaves claramente inválidas.
+        if len(self.rapidapi_key) < 20:
+            return {
+                'email': None,
+                'error': 'RapidAPI key inválida ou incompleta (mínimo esperado: 20 caracteres)'
+            }
         
         # RapidAPI costuma exigir headers com estes nomes (case-insensitive na prática,
         # mas mantemos o padrão para reduzir chance de erro).
@@ -122,23 +239,24 @@ class TempMailDataGenerator(IDataGenerator):
         }
         
         try:
-            url = "https://temp-mail.p.rapidapi.com/api/v3/email/new"
+            url = "https://privatix-temp-mail-v1.p.rapidapi.com/request/domains/"
             response = requests.get(url, headers=headers, timeout=5)
-            
-            # Alguns endpoints de "create" podem falhar com 404 quando o método está errado.
-            if response.status_code == 404:
-                response = requests.post(url, headers=headers, timeout=5)
 
             if response.status_code == 200:
                 data = response.json()
-                # Dependendo da versão do endpoint, o campo pode vir como `email` ou `address`.
-                email = data.get('email') or data.get('address') or ''
-                if not email:
+
+                domains = self._extract_domains_from_payload(data)
+                if not domains:
                     return {
                         'email': None,
-                        'error': "API retornou sucesso, mas não veio o campo de email"
+                        'error': f"API retornou sucesso, mas não foi possível extrair domínios. Body: {str(data)[:500]}"
                     }
-                return {'email': email, 'error': None}
+
+                domain = random.choice(domains)
+                email = self._generate_disposable_email(domain)
+                mail_id = hashlib.md5(email.encode("utf-8")).hexdigest()
+
+                return {'email': email, 'mail_id': mail_id, 'error': None}
 
             # Tratamento mais detalhado para status não-200
             status = response.status_code
@@ -182,4 +300,4 @@ class TempMailDataGenerator(IDataGenerator):
     
     def update_api_key(self, key: str) -> None:
         """Atualiza a chave de API."""
-        self.rapidapi_key = key
+        self.rapidapi_key = self._normalize_api_key(key)

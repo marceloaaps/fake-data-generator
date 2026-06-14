@@ -6,7 +6,7 @@
   },
   "api": {
     "rapidapi_key": "",
-    "rapidapi_host": "temp-mail.p.rapidapi.com"
+    "rapidapi_host": "privatix-temp-mail-v1.p.rapidapi.com"
   },
   "app_version": "1.0.0",
   "hotkeys_enabled": false,

@@ -974,16 +974,23 @@ class TempMailShortcutGUI:
             # Atualizar API Key
             if event == '-UPDATE_API_KEY-':
                 new_key = values['-APIKEY_MAIN-'].strip()
-                if new_key:
-                    try:
-                        self.config_manager.set('api.rapidapi_key', new_key)
-                        self.data_generator.update_api_key(new_key)
-                        self.shortcut_manager.update_api_key(new_key)
+                try:
+                    self.config_manager.set('api.rapidapi_key', new_key)
+                    saved_key = self.config_manager.get('api.rapidapi_key', '')
+
+                    # Reforça na UI o valor persistido no sistema.
+                    self.window['-APIKEY_MAIN-'].update(saved_key)
+
+                    # Mantém serviços em memória com a chave mais recente.
+                    self.data_generator.update_api_key(saved_key)
+                    self.shortcut_manager.update_api_key(saved_key)
+
+                    if saved_key:
                         self.update_output('API Key atualizada com sucesso!', 'success')
-                    except Exception as e:
-                        self.update_output(f'Erro ao atualizar API Key: {str(e)[:40]}', 'error')
-                else:
-                    self.update_output('API Key nao pode estar vazia', 'warning')
+                    else:
+                        self.update_output('API Key removida com sucesso!', 'success')
+                except Exception as e:
+                    self.update_output(f'Erro ao atualizar API Key: {str(e)[:40]}', 'error')
             
             # Gerar Email
             if event == '-EMAIL-':

@@ -972,16 +972,22 @@ class TempMailShortcutGUI(QMainWindow):
     def _save_api_key(self):
         """Salva a API Key"""
         new_key = self.api_key_input.text().strip()
-        if new_key:
-            try:
-                self.config_manager.set('api.rapidapi_key', new_key)
-                self.data_generator.update_api_key(new_key)
-                self.shortcut_manager.update_api_key(new_key)
+        try:
+            self.config_manager.set('api.rapidapi_key', new_key)
+            saved_key = self.config_manager.get('api.rapidapi_key', '')
+
+            # Reflete no campo exatamente o valor persistido no sistema.
+            self.api_key_input.setText(saved_key)
+
+            # Sincroniza todos os componentes em memória com o valor salvo.
+            self.data_generator.update_api_key(saved_key)
+            self.shortcut_manager.update_api_key(saved_key)
+            if saved_key:
                 self._show_message("Sucesso", "API Key atualizada!", "success")
-            except Exception as e:
-                self._show_message("Erro", f"Erro ao atualizar: {str(e)[:50]}", "error")
-        else:
-            self._show_message("Aviso", "API Key não pode estar vazia", "warning")
+            else:
+                self._show_message("Sucesso", "API Key removida. Geração de email ficará desativada.", "success")
+        except Exception as e:
+            self._show_message("Erro", f"Erro ao atualizar: {str(e)[:50]}", "error")
     
     def _toggle_global_hotkeys(self):
         """Ativa/desativa atalhos globais"""

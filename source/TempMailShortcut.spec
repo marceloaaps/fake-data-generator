@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['main.py'],
+    ['E:\\Workspaces\\ws-py\\temp-mail-shortcut\\source\\main.py'],
     pathex=[],
     binaries=[],
     datas=[('src', 'src'), ('assets', 'assets')],
@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='FakeDataGenerator',
+    name='TempMailShortcut',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['assets/app-icon.ico'],
+    icon=['E:\\Workspaces\\ws-py\\temp-mail-shortcut\\source\\assets\\app-icon.ico'],
 )
