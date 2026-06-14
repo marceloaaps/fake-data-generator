@@ -13,6 +13,27 @@ from ...domain.interfaces.repositories import IDataGenerator
 
 class TempMailDataGenerator(IDataGenerator):
     """Gera dados temporários: CPF, CEP e Email."""
+
+    _CYBERPUNK_2077_CHARACTERS = [
+        "V",
+        "Johnny Silverhand",
+        "Judy Alvarez",
+        "Panam Palmer",
+        "River Ward",
+        "Kerry Eurodyne",
+        "Jackie Welles",
+        "Takemura",
+        "Hanako Arasaka",
+        "Solomon Reed",
+        "Songbird",
+        "Rogue Amendiares",
+        "Alt Cunningham",
+        "Misty Olszewski",
+        "Mitch Anderson",
+        "Aldecaldo Saul",
+        "Claire Russell",
+        "Placide",
+    ]
     
     def __init__(self, rapidapi_key: str = None):
         self.rapidapi_key = self._normalize_api_key(rapidapi_key)
@@ -114,6 +135,125 @@ class TempMailDataGenerator(IDataGenerator):
                     add_domain(domain)
 
         return domains
+
+    @staticmethod
+    def _to_roman(number: int) -> str:
+        """Converte um inteiro positivo para numeral romano."""
+        if number <= 0:
+            return "I"
+
+        numerals = [
+            (1000, "M"),
+            (900, "CM"),
+            (500, "D"),
+            (400, "CD"),
+            (100, "C"),
+            (90, "XC"),
+            (50, "L"),
+            (40, "XL"),
+            (10, "X"),
+            (9, "IX"),
+            (5, "V"),
+            (4, "IV"),
+            (1, "I"),
+        ]
+        result = []
+        remainder = number
+        for value, symbol in numerals:
+            while remainder >= value:
+                result.append(symbol)
+                remainder -= value
+        return ''.join(result)
+
+    @staticmethod
+    def _only_digits(value: str) -> str:
+        return re.sub(r"\D", "", value or "")
+
+    @staticmethod
+    def _format_cnpj(cnpj_digits: str) -> str:
+        return f"{cnpj_digits[:2]}.{cnpj_digits[2:5]}.{cnpj_digits[5:8]}/{cnpj_digits[8:12]}-{cnpj_digits[12:]}"
+
+    @staticmethod
+    def _calculate_cnpj_digit(base_digits: str) -> str:
+        weights = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] if len(base_digits) == 12 else [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+        total = sum(int(digit) * weight for digit, weight in zip(base_digits, weights))
+        remainder = total % 11
+        digit = 0 if remainder < 2 else 11 - remainder
+        return str(digit)
+
+    @staticmethod
+    def _generate_valid_cnpj_digits() -> str:
+        base = ''.join(str(random.randint(0, 9)) for _ in range(8)) + '0001'
+        first_digit = TempMailDataGenerator._calculate_cnpj_digit(base)
+        second_digit = TempMailDataGenerator._calculate_cnpj_digit(base + first_digit)
+        return base + first_digit + second_digit
+
+    @staticmethod
+    def _generate_valid_brazilian_phone_digits() -> str:
+        ddd = random.randint(11, 99)
+        first_digit = '9'
+        remaining = ''.join(str(random.randint(0, 9)) for _ in range(8))
+        return f"{ddd:02d}{first_digit}{remaining}"
+
+    @classmethod
+    def _generate_random_cyberpunk_name(cls) -> str:
+        return random.choice(cls._CYBERPUNK_2077_CHARACTERS)
+
+    def generate_name(self, base_name: str, counter: int, random_enabled: bool = False) -> Dict[str, Optional[str]]:
+        """Gera nome com contador romano ou nome aleatório de Cyberpunk 2077."""
+        try:
+            if random_enabled:
+                return {
+                    'name': self._generate_random_cyberpunk_name(),
+                    'counter': counter,
+                    'random_enabled': True,
+                    'error': None,
+                }
+
+            clean_base = str(base_name or "").strip()
+            if not clean_base:
+                return {
+                    'name': None,
+                    'counter': counter,
+                    'random_enabled': False,
+                    'error': 'Nome base não configurado'
+                }
+
+            next_counter = max(int(counter or 0), 0) + 1
+            return {
+                'name': f"{clean_base} {self._to_roman(next_counter)}",
+                'counter': next_counter,
+                'random_enabled': False,
+                'error': None,
+            }
+        except Exception as e:
+            return {
+                'name': None,
+                'counter': counter,
+                'random_enabled': random_enabled,
+                'error': f"Erro ao gerar nome: {str(e)}"
+            }
+
+    def generate_cnpj(self, formatted: bool = True) -> Dict[str, Optional[str]]:
+        """Gera CNPJ válido localmente."""
+        try:
+            cnpj_digits = self._generate_valid_cnpj_digits()
+            cnpj = self._format_cnpj(cnpj_digits) if formatted else cnpj_digits
+            return {'cnpj': cnpj, 'error': None}
+        except Exception as e:
+            return {'cnpj': None, 'error': f'Erro ao gerar CNPJ: {str(e)}'}
+
+    def generate_phone(self, formatted: bool = True) -> Dict[str, Optional[str]]:
+        """Gera celular brasileiro válido."""
+        try:
+            phone_digits = self._generate_valid_brazilian_phone_digits()
+            if formatted:
+                phone = f"({phone_digits[:2]}) {phone_digits[2:7]}-{phone_digits[7:]}"
+            else:
+                phone = phone_digits
+            return {'phone': phone, 'error': None}
+        except Exception as e:
+            return {'phone': None, 'error': f'Erro ao gerar celular: {str(e)}'}
 
     @staticmethod
     def _generate_local_part(length: int = 12) -> str:

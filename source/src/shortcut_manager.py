@@ -63,6 +63,64 @@ class ShortcutManager:
                 self.logger.error(f"Erro ao gerar CPF: {str(e)}\n{traceback.format_exc()}")
                 if self.callback_handler:
                     self.callback_handler("cpf", {"cpf": None, "error": str(e)})
+
+        def on_name():
+            try:
+                from .application.use_cases.generate_data import GenerateNameUseCase
+                use_case = GenerateNameUseCase(
+                    self.data_generator,
+                    Container.get_clipboard_service(),
+                    self.config_manager._repo,
+                    self.logger
+                )
+                result = use_case.execute()
+                if self.callback_handler:
+                    self.callback_handler("name", {"name": result.value, "error": result.error})
+                else:
+                    self.logger.debug("Nenhum callback_handler definido para name")
+            except Exception as e:
+                import traceback
+                self.logger.error(f"Erro ao gerar nome: {str(e)}\n{traceback.format_exc()}")
+                if self.callback_handler:
+                    self.callback_handler("name", {"name": None, "error": str(e)})
+
+        def on_cnpj():
+            try:
+                from .application.use_cases.generate_data import GenerateCNPJUseCase
+                use_case = GenerateCNPJUseCase(
+                    self.data_generator,
+                    Container.get_clipboard_service(),
+                    self.logger
+                )
+                result = use_case.execute(formatted=True)
+                if self.callback_handler:
+                    self.callback_handler("cnpj", {"cnpj": result.value, "error": result.error})
+                else:
+                    self.logger.debug("Nenhum callback_handler definido para cnpj")
+            except Exception as e:
+                import traceback
+                self.logger.error(f"Erro ao gerar CNPJ: {str(e)}\n{traceback.format_exc()}")
+                if self.callback_handler:
+                    self.callback_handler("cnpj", {"cnpj": None, "error": str(e)})
+
+        def on_phone():
+            try:
+                from .application.use_cases.generate_data import GeneratePhoneUseCase
+                use_case = GeneratePhoneUseCase(
+                    self.data_generator,
+                    Container.get_clipboard_service(),
+                    self.logger
+                )
+                result = use_case.execute(formatted=True)
+                if self.callback_handler:
+                    self.callback_handler("phone", {"phone": result.value, "error": result.error})
+                else:
+                    self.logger.debug("Nenhum callback_handler definido para phone")
+            except Exception as e:
+                import traceback
+                self.logger.error(f"Erro ao gerar celular: {str(e)}\n{traceback.format_exc()}")
+                if self.callback_handler:
+                    self.callback_handler("phone", {"phone": None, "error": str(e)})
         
         def on_cep():
             try:
@@ -89,14 +147,22 @@ class ShortcutManager:
             
             # Registrar novos atalhos
             email_key = shortcuts_config.get("email", "ctrl+shift+e")
+            name_key = shortcuts_config.get("name", "ctrl+shift+n")
             cpf_key = shortcuts_config.get("cpf", "ctrl+shift+c")
+            cnpj_key = shortcuts_config.get("cnpj", "ctrl+shift+j")
+            phone_key = shortcuts_config.get("phone", "ctrl+shift+t")
             cep_key = shortcuts_config.get("cep", "ctrl+shift+z")
             
             self.shortcut_service.register(email_key, on_email)
+            self.shortcut_service.register(name_key, on_name)
             self.shortcut_service.register(cpf_key, on_cpf)
+            self.shortcut_service.register(cnpj_key, on_cnpj)
+            self.shortcut_service.register(phone_key, on_phone)
             self.shortcut_service.register(cep_key, on_cep)
             self.monitoring = True
-            self.logger.info(f"Atalhos registrados: email={email_key}, cpf={cpf_key}, cep={cep_key}")
+            self.logger.info(
+                f"Atalhos registrados: email={email_key}, name={name_key}, cpf={cpf_key}, cnpj={cnpj_key}, phone={phone_key}, cep={cep_key}"
+            )
         except Exception as e:
             import traceback
             self.logger.error(f"Falha ao registrar atalhos: {str(e)}\n{traceback.format_exc()}")

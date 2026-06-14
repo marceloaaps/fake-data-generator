@@ -43,7 +43,15 @@ class FileConfigRepository(IConfigRepository):
             "shortcuts": {
                 "email": "Ctrl+Shift+E",
                 "cpf": "Ctrl+Shift+C",
-                "cep": "Ctrl+Shift+Z"
+                "cep": "Ctrl+Shift+Z",
+                "name": "Ctrl+Shift+N",
+                "cnpj": "Ctrl+Shift+J",
+                "phone": "Ctrl+Shift+T"
+            },
+            "name": {
+                "base": "",
+                "counter": 0,
+                "random_enabled": False
             },
             "api": {
                 "rapidapi_key": "",

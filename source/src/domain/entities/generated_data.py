@@ -10,7 +10,7 @@ from typing import Optional
 class GeneratedData:
     """Entidade que representa dados gerados."""
     
-    data_type: str  # 'email', 'cpf', 'cep'
+    data_type: str  # 'email', 'cpf', 'cep', 'name', 'cnpj', 'phone'
     value: str
     formatted: bool = True
     error: Optional[str] = None

@@ -22,6 +22,7 @@ import logging
 import qtawesome as qta
 
 from .config_manager import ConfigManager
+from .container import Container
 from .data_generator import DataGenerator
 from .clipboard_manager import ClipboardManager
 from .shortcut_manager import ShortcutManager
@@ -582,6 +583,9 @@ class TempMailShortcutGUI(QMainWindow):
             self.config_manager.get("api.rapidapi_key")
         )
         self.clipboard_manager = ClipboardManager()
+        self.name_use_case = Container.get_generate_name_use_case(self.config_manager._repo)
+        self.cnpj_use_case = Container.get_generate_cnpj_use_case()
+        self.phone_use_case = Container.get_generate_phone_use_case()
         self.shortcut_manager = ShortcutManager(
             self.config_manager,
             callback_handler=self._on_shortcut_triggered
@@ -799,6 +803,69 @@ class TempMailShortcutGUI(QMainWindow):
         api_card.layout.addWidget(link_label)
         
         layout.addWidget(api_card)
+
+        # Seção: Nome
+        name_card = ModernCard("Nome")
+        name_card.layout.setSpacing(8)
+        name_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.name_counter_label = QLabel()
+        self.name_counter_label.setFont(QFont('Consolas', 8))
+        self.name_counter_label.setStyleSheet(f"color: {COLORS['fg']}; background: transparent; border: none;")
+        self.name_counter_label.setWordWrap(True)
+        self.name_counter_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        name_card.layout.addWidget(self.name_counter_label)
+
+        name_row = QHBoxLayout()
+        name_row.setContentsMargins(0, 0, 0, 0)
+        name_row.setSpacing(6)
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("Digite o nome base")
+        self.name_input.setFont(QFont('Segoe UI', 9))
+        self.name_input.setText(self.config_manager.get('name.base', ''))
+        self.name_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.name_input.setMinimumWidth(0)
+        self.name_input.setMinimumHeight(30)
+        self.name_input.editingFinished.connect(lambda: self._save_name_settings(silent=True))
+
+        name_save_btn = QPushButton()
+        name_save_btn.setIcon(IconManager.get_check())
+        name_save_btn.setFixedWidth(40)
+        name_save_btn.setMinimumHeight(30)
+        name_save_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        name_save_btn.setObjectName("successBtn")
+        name_save_btn.setToolTip("Salvar nome base")
+        name_save_btn.clicked.connect(self._save_name_settings)
+
+        name_row.addWidget(self.name_input, 1)
+        name_row.addWidget(name_save_btn)
+        name_card.layout.addLayout(name_row)
+
+        self.name_random_checkbox = QCheckBox("Gerar nome aleatório")
+        self.name_random_checkbox.setFont(QFont('Segoe UI', 9))
+        self.name_random_checkbox.setCursor(QCursor(Qt.PointingHandCursor))
+        self.name_random_checkbox.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.name_random_checkbox.setChecked(bool(self.config_manager.get('name.random_enabled', False)))
+        self.name_random_checkbox.setStyleSheet(
+            f"QCheckBox {{ color: {COLORS['fg']}; background-color: transparent; border: none; padding: 0; margin: 0; }}"
+            f"QCheckBox::indicator {{ width: 14px; height: 14px; border-radius: 3px; border: 1px solid {COLORS['border']}; background-color: transparent; }}"
+            f"QCheckBox::indicator:checked {{ border: 1px solid {COLORS['success']}; background: {COLORS['success']}; }}"
+        )
+        self.name_random_checkbox.stateChanged.connect(self._save_name_random_status)
+        name_card.layout.addWidget(self.name_random_checkbox)
+
+        reset_name_btn = QPushButton("Resetar contador")
+        reset_name_btn.setMinimumHeight(30)
+        reset_name_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        reset_name_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        reset_name_btn.clicked.connect(self._reset_name_counter)
+
+        name_card.layout.addWidget(self.name_counter_label)
+        name_card.layout.addWidget(reset_name_btn)
+
+        self._refresh_name_status()
+
+        layout.addWidget(name_card)
         
         # Seção: Status
         status_card = ModernCard("Status")
@@ -890,6 +957,30 @@ class TempMailShortcutGUI(QMainWindow):
         email_layout.addWidget(self.email_input)
         email_layout.addWidget(email_save)
         shortcuts_card.layout.addLayout(email_layout)
+
+        # Nome
+        name_layout = QHBoxLayout()
+        name_layout.setContentsMargins(0, 0, 0, 0)
+        name_layout.setSpacing(6)
+        name_btn = QPushButton("Nome")
+        name_btn.setFixedWidth(74)
+        name_btn.setMinimumHeight(30)
+        name_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        name_btn.clicked.connect(lambda: self._generate('name'))
+        self.name_shortcut_input = ShortcutCaptureLineEdit()
+        self.name_shortcut_input.setText(self.config_manager.get('shortcuts.name', 'Ctrl+Shift+N'))
+        name_save = QPushButton()
+        name_save.setIcon(IconManager.get_check())
+        name_save.setMaximumWidth(40)
+        name_save.setMinimumHeight(30)
+        name_save.setCursor(QCursor(Qt.PointingHandCursor))
+        name_save.setObjectName("successBtn")
+        name_save.clicked.connect(lambda: self._save_shortcut('name', self.name_shortcut_input))
+        name_save.setToolTip("Salvar atalho")
+        name_layout.addWidget(name_btn)
+        name_layout.addWidget(self.name_shortcut_input)
+        name_layout.addWidget(name_save)
+        shortcuts_card.layout.addLayout(name_layout)
         
         # CPF
         cpf_layout = QHBoxLayout()
@@ -914,6 +1005,54 @@ class TempMailShortcutGUI(QMainWindow):
         cpf_layout.addWidget(self.cpf_input)
         cpf_layout.addWidget(cpf_save)
         shortcuts_card.layout.addLayout(cpf_layout)
+
+        # CNPJ
+        cnpj_layout = QHBoxLayout()
+        cnpj_layout.setContentsMargins(0, 0, 0, 0)
+        cnpj_layout.setSpacing(6)
+        cnpj_btn = QPushButton("CNPJ")
+        cnpj_btn.setFixedWidth(74)
+        cnpj_btn.setMinimumHeight(30)
+        cnpj_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        cnpj_btn.clicked.connect(lambda: self._generate('cnpj'))
+        self.cnpj_shortcut_input = ShortcutCaptureLineEdit()
+        self.cnpj_shortcut_input.setText(self.config_manager.get('shortcuts.cnpj', 'Ctrl+Shift+J'))
+        cnpj_save = QPushButton()
+        cnpj_save.setIcon(IconManager.get_check())
+        cnpj_save.setMaximumWidth(40)
+        cnpj_save.setMinimumHeight(30)
+        cnpj_save.setCursor(QCursor(Qt.PointingHandCursor))
+        cnpj_save.setObjectName("successBtn")
+        cnpj_save.clicked.connect(lambda: self._save_shortcut('cnpj', self.cnpj_shortcut_input))
+        cnpj_save.setToolTip("Salvar atalho")
+        cnpj_layout.addWidget(cnpj_btn)
+        cnpj_layout.addWidget(self.cnpj_shortcut_input)
+        cnpj_layout.addWidget(cnpj_save)
+        shortcuts_card.layout.addLayout(cnpj_layout)
+
+        # Celular
+        phone_layout = QHBoxLayout()
+        phone_layout.setContentsMargins(0, 0, 0, 0)
+        phone_layout.setSpacing(6)
+        phone_btn = QPushButton("Celular")
+        phone_btn.setFixedWidth(74)
+        phone_btn.setMinimumHeight(30)
+        phone_btn.setCursor(QCursor(Qt.PointingHandCursor))
+        phone_btn.clicked.connect(lambda: self._generate('phone'))
+        self.phone_shortcut_input = ShortcutCaptureLineEdit()
+        self.phone_shortcut_input.setText(self.config_manager.get('shortcuts.phone', 'Ctrl+Shift+T'))
+        phone_save = QPushButton()
+        phone_save.setIcon(IconManager.get_check())
+        phone_save.setMaximumWidth(40)
+        phone_save.setMinimumHeight(30)
+        phone_save.setCursor(QCursor(Qt.PointingHandCursor))
+        phone_save.setObjectName("successBtn")
+        phone_save.clicked.connect(lambda: self._save_shortcut('phone', self.phone_shortcut_input))
+        phone_save.setToolTip("Salvar atalho")
+        phone_layout.addWidget(phone_btn)
+        phone_layout.addWidget(self.phone_shortcut_input)
+        phone_layout.addWidget(phone_save)
+        shortcuts_card.layout.addLayout(phone_layout)
         
         # CEP
         cep_layout = QHBoxLayout()
@@ -1116,10 +1255,16 @@ class TempMailShortcutGUI(QMainWindow):
             try:
                 if shortcut_type == 'email':
                     self.config_manager.set('shortcuts.email', new_shortcut)
+                elif shortcut_type == 'name':
+                    self.config_manager.set('shortcuts.name', new_shortcut)
                 elif shortcut_type == 'cpf':
                     self.config_manager.set('shortcuts.cpf', new_shortcut)
+                elif shortcut_type == 'cnpj':
+                    self.config_manager.set('shortcuts.cnpj', new_shortcut)
                 elif shortcut_type == 'cep':
                     self.config_manager.set('shortcuts.cep', new_shortcut)
+                elif shortcut_type == 'phone':
+                    self.config_manager.set('shortcuts.phone', new_shortcut)
                 
                 # Reiniciar atalhos se estão ativos
                 if self.is_monitoring:
@@ -1131,6 +1276,68 @@ class TempMailShortcutGUI(QMainWindow):
                 self._show_message("Erro", f"Erro ao atualizar: {str(e)[:50]}", "error")
         else:
             self._show_message("Aviso", "Atalho não pode estar vazio", "warning")
+
+    def _save_name_settings(self, silent: bool = False):
+        """Salva o nome base e o status do modo aleatório."""
+        try:
+            base_name = self.name_input.text().strip()
+            self.config_manager.set('name.base', base_name)
+            self.config_manager.set('name.random_enabled', self.name_random_checkbox.isChecked())
+            self._refresh_name_status()
+            if not silent:
+                self._show_message("Sucesso", "Configuração de nome atualizada!", "success")
+        except Exception as e:
+            if not silent:
+                self._show_message("Erro", f"Erro ao salvar nome: {str(e)[:50]}", "error")
+
+    def _save_name_random_status(self, *args):
+        """Persiste a mudança no modo aleatório do nome."""
+        try:
+            self.config_manager.set('name.random_enabled', self.name_random_checkbox.isChecked())
+            self._refresh_name_status()
+        except Exception:
+            pass
+
+    def _reset_name_counter(self):
+        """Reseta o contador romano do nome para I na próxima geração."""
+        try:
+            self.config_manager.set('name.counter', 0)
+            self._refresh_name_status()
+            self._show_message("Sucesso", "Contador do nome resetado!", "success")
+        except Exception as e:
+            self._show_message("Erro", f"Erro ao resetar contador: {str(e)[:50]}", "error")
+
+    @staticmethod
+    def _roman_numeral(number: int) -> str:
+        if number <= 0:
+            return 'I'
+        numerals = [
+            (1000, 'M'), (900, 'CM'), (500, 'D'), (400, 'CD'),
+            (100, 'C'), (90, 'XC'), (50, 'L'), (40, 'XL'),
+            (10, 'X'), (9, 'IX'), (5, 'V'), (4, 'IV'), (1, 'I')
+        ]
+        result = []
+        remainder = number
+        for value, symbol in numerals:
+            while remainder >= value:
+                result.append(symbol)
+                remainder -= value
+        return ''.join(result)
+
+    def _refresh_name_status(self):
+        """Atualiza os textos de status do bloco de nome."""
+        try:
+            random_enabled = bool(self.config_manager.get('name.random_enabled', False))
+            counter = int(self.config_manager.get('name.counter', 0) or 0)
+            base_name = str(self.config_manager.get('name.base', '') or '').strip()
+            if random_enabled:
+                preview = "nome aleatório de Cyberpunk 2077"
+            else:
+                roman = self._roman_numeral(max(counter, 0) + 1)
+                preview = f"{(base_name or 'Defina um nome base')} {roman}".strip()
+            self.name_counter_label.setText(f"Nome - Próximo: {preview}")
+        except Exception:
+            pass
     
     def _generate(self, data_type: str):
         """Gera dados do tipo especificado"""
@@ -1150,6 +1357,35 @@ class TempMailShortcutGUI(QMainWindow):
                 self.clipboard_manager.copy_to_clipboard(cpf)
                 self._add_generated_log('cpf', cpf)
                 self._show_message("Sucesso", f"CPF copiado: {cpf}", "success")
+
+            elif data_type == 'name':
+                self._save_name_settings(silent=True)
+                result = self.name_use_case.execute()
+                if result.error:
+                    self._show_message("Erro", f"Nome: {result.error}", "error")
+                else:
+                    name = result.value
+                    self._add_generated_log('name', name)
+                    self._refresh_name_status()
+                    self._show_message("Sucesso", f"Nome copiado: {name}", "success")
+
+            elif data_type == 'cnpj':
+                result = self.cnpj_use_case.execute(formatted=True)
+                if result.error:
+                    self._show_message("Erro", f"CNPJ: {result.error}", "error")
+                else:
+                    cnpj = result.value
+                    self._add_generated_log('cnpj', cnpj)
+                    self._show_message("Sucesso", f"CNPJ copiado: {cnpj}", "success")
+
+            elif data_type == 'phone':
+                result = self.phone_use_case.execute(formatted=True)
+                if result.error:
+                    self._show_message("Erro", f"Celular: {result.error}", "error")
+                else:
+                    phone = result.value
+                    self._add_generated_log('phone', phone)
+                    self._show_message("Sucesso", f"Celular copiado: {phone}", "success")
             
             elif data_type == 'cep':
                 cep = self.data_generator.generate_cep(formatted=True)
@@ -1164,7 +1400,7 @@ class TempMailShortcutGUI(QMainWindow):
         """Adiciona ao log de dados gerados"""
         timestamp = datetime.now().strftime('%H:%M:%S')
         
-        type_map = {'email': 'Email', 'cpf': 'CPF', 'cep': 'CEP'}
+        type_map = {'email': 'Email', 'cpf': 'CPF', 'cep': 'CEP', 'name': 'Nome', 'cnpj': 'CNPJ', 'phone': 'Celular'}
         type_name = type_map.get(data_type, data_type)
         
         log_entry = f"[{timestamp}] {type_name}: {value}"
@@ -1205,7 +1441,7 @@ class TempMailShortcutGUI(QMainWindow):
 
     def _show_shortcut_toast(self, data_type: str):
         """Mostra notificação temporária para geração via atalho."""
-        type_map = {'email': 'Email', 'cpf': 'CPF', 'cep': 'CEP'}
+        type_map = {'email': 'Email', 'cpf': 'CPF', 'cep': 'CEP', 'name': 'Nome', 'cnpj': 'CNPJ', 'phone': 'Celular'}
         type_name = type_map.get(data_type, data_type.upper())
         message = f"Seu {type_name} foi criado."
 

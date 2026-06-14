@@ -19,7 +19,10 @@ from .infrastructure.logger.console_logger import ConsoleLogger
 from .application.use_cases.generate_data import (
     GenerateCPFUseCase,
     GenerateCEPUseCase,
-    GenerateEmailUseCase
+    GenerateEmailUseCase,
+    GenerateNameUseCase,
+    GenerateCNPJUseCase,
+    GeneratePhoneUseCase
 )
 
 
@@ -101,6 +104,36 @@ class Container:
     def get_generate_email_use_case(cls) -> GenerateEmailUseCase:
         """Obtém caso de uso de geração de email."""
         return GenerateEmailUseCase(
+            data_generator=cls.get_data_generator(),
+            clipboard_service=cls.get_clipboard_service(),
+            logger=cls.get_logger()
+        )
+
+    @classmethod
+    def get_generate_name_use_case(cls, config: IConfigRepository = None) -> GenerateNameUseCase:
+        """Obtém caso de uso de geração de nome."""
+        if config is None:
+            config = cls.get_config_repository()
+        return GenerateNameUseCase(
+            data_generator=cls.get_data_generator(config),
+            clipboard_service=cls.get_clipboard_service(),
+            config_repository=config,
+            logger=cls.get_logger()
+        )
+
+    @classmethod
+    def get_generate_cnpj_use_case(cls) -> GenerateCNPJUseCase:
+        """Obtém caso de uso de geração de CNPJ."""
+        return GenerateCNPJUseCase(
+            data_generator=cls.get_data_generator(),
+            clipboard_service=cls.get_clipboard_service(),
+            logger=cls.get_logger()
+        )
+
+    @classmethod
+    def get_generate_phone_use_case(cls) -> GeneratePhoneUseCase:
+        """Obtém caso de uso de geração de celular."""
+        return GeneratePhoneUseCase(
             data_generator=cls.get_data_generator(),
             clipboard_service=cls.get_clipboard_service(),
             logger=cls.get_logger()

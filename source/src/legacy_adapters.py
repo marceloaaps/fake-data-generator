@@ -57,6 +57,15 @@ class LegacyDataGeneratorAdapter:
     
     def generate_temporary_email(self):
         return self._generator.generate_email()
+
+    def generate_name(self, base_name: str, counter: int, random_enabled: bool = False):
+        return self._generator.generate_name(base_name, counter, random_enabled)
+
+    def generate_cnpj(self, formatted: bool = True):
+        return self._generator.generate_cnpj(formatted)
+
+    def generate_phone(self, formatted: bool = True):
+        return self._generator.generate_phone(formatted)
     
     def update_api_key(self, key: str):
         self._generator.update_api_key(key)

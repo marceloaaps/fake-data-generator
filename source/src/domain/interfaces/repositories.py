@@ -62,6 +62,21 @@ class IDataGenerator(ABC):
         """Gera email temporário."""
         pass
 
+    @abstractmethod
+    def generate_name(self, base_name: str, counter: int, random_enabled: bool = False) -> Dict[str, Optional[str]]:
+        """Gera nome com contador romano ou nome aleatório."""
+        pass
+
+    @abstractmethod
+    def generate_cnpj(self, formatted: bool = True) -> Dict[str, Optional[str]]:
+        """Gera CNPJ válido."""
+        pass
+
+    @abstractmethod
+    def generate_phone(self, formatted: bool = True) -> Dict[str, Optional[str]]:
+        """Gera celular brasileiro válido."""
+        pass
+
 
 class IShortcutService(ABC):
     """Interface para gerenciar atalhos globais de teclado."""

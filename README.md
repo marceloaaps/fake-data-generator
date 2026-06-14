@@ -111,6 +111,19 @@ O arquivo `config.json` é salvo automaticamente em um local oculto:
 Conteúdo padrão:
 ```json
 {
+  "shortcuts": {
+    "email": "ctrl+shift+e",
+    "cpf": "ctrl+shift+c",
+    "cep": "ctrl+shift+z",
+    "name": "ctrl+shift+n",
+    "cnpj": "ctrl+shift+j",
+    "phone": "ctrl+shift+t"
+  },
+  "name": {
+    "base": "",
+    "counter": 0,
+    "random_enabled": false
+  },
   "api": {
     "rapidapi_key": "sua-chave-aqui",
     "rapidapi_host": "privatix-temp-mail-v1.p.rapidapi.com"
