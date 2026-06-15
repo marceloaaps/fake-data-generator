@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QLineEdit, QCheckBox, QTextEdit, QTabWidget,
     QFrame, QScrollArea, QInputDialog, QMessageBox, QSizePolicy,
-    QSystemTrayIcon, QMenu, QAction, QDialog
+    QSystemTrayIcon, QMenu, QAction, QDialog, QGraphicsOpacityEffect
 )
 from PyQt5.QtCore import Qt, QSize, QTimer, pyqtSignal, QObject, QEvent, QPoint, QRectF, QPropertyAnimation, QEasingCurve
 from PyQt5.QtGui import QFont, QIcon, QPixmap, QCursor, QKeySequence, QPainter, QColor, QPen, QPainterPath
@@ -294,16 +294,22 @@ class ModernCard(QWidget):
 
         # If a title was provided, add it to the top of the inner layout so
         # it appears inside the card box (no separate border/background).
+        self.title_label = None
         if title:
-            title_label = QLabel(title)
-            title_label.setFont(QFont('Segoe UI', 11, QFont.Bold))
-            title_label.setStyleSheet(f"color: {COLORS['fg']}; background: transparent; border: none; padding-bottom: 6px;")
-            title_label.setWordWrap(True)
+            self.title_label = QLabel(title)
+            self.title_label.setFont(QFont('Segoe UI', 11, QFont.Bold))
+            self.title_label.setStyleSheet(f"color: {COLORS['fg']}; background: transparent; border: none; padding-bottom: 6px;")
+            self.title_label.setWordWrap(True)
             # Insert title at the top of the inner layout
-            self.layout.insertWidget(0, title_label)
+            self.layout.insertWidget(0, self.title_label)
 
         main_layout.addWidget(content_frame)
         self.setLayout(main_layout)
+
+    def set_title(self, title: str) -> None:
+        """Atualiza o título exibido no topo do card."""
+        if self.title_label is not None:
+            self.title_label.setText(title)
 
 
 class EventSignals(QObject):
@@ -347,19 +353,12 @@ class ShortcutCaptureLineEdit(QLineEdit):
         event.accept()
 
 
-class ToastNotification(QWidget):
-    """Notificacao discreta na tela, nao clicavel, com auto fechamento."""
-    def __init__(self, message: str, duration_ms: int = 5000, parent=None):
+class _ToastSurface(QWidget):
+    """Conteúdo visual do toast (fundo + texto). Animado dentro da janela."""
+
+    def __init__(self, message: str, parent=None):
         super().__init__(parent)
-        self._duration_ms = duration_ms
-        self._target_pos = QPoint(0, 0)
-        self._slide_anim = None
-        self.setWindowFlags(
-            Qt.FramelessWindowHint | Qt.Tool | Qt.WindowStaysOnTopHint
-        )
         self.setAttribute(Qt.WA_TranslucentBackground, True)
-        self.setAttribute(Qt.WA_ShowWithoutActivating, True)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
         self.setAutoFillBackground(False)
 
         layout = QHBoxLayout()
@@ -379,12 +378,9 @@ class ToastNotification(QWidget):
         layout.addWidget(icon_label)
         layout.addWidget(text_label)
         self.setLayout(layout)
-
         self.adjustSize()
-        self._position_on_screen()
 
     def paintEvent(self, event):
-        """Desenha fundo/borda manualmente para funcionar com janela translúcida."""
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
 
@@ -394,8 +390,6 @@ class ToastNotification(QWidget):
 
         toast_path = QPainterPath()
         toast_path.addRoundedRect(rectf, radius, radius)
-
-        # Clip para garantir que tudo seja desenhado estritamente dentro do toast arredondado.
         painter.setClipPath(toast_path)
 
         painter.setPen(Qt.NoPen)
@@ -413,6 +407,32 @@ class ToastNotification(QWidget):
 
         super().paintEvent(event)
 
+
+class ToastNotification(QWidget):
+    """Notificacao discreta na tela, nao clicavel, com auto fechamento."""
+    _SLIDE_OFFSET = 48
+
+    def __init__(self, message: str, duration_ms: int = 5000, parent=None):
+        super().__init__(parent)
+        self._duration_ms = duration_ms
+        self._target_pos = QPoint(0, 0)
+        self._slide_anim = None
+        self._fade_anim = None
+        self.setWindowFlags(
+            Qt.FramelessWindowHint | Qt.Tool | Qt.WindowStaysOnTopHint
+        )
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WA_ShowWithoutActivating, True)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.setAutoFillBackground(False)
+
+        self._surface = _ToastSurface(message, self)
+        self._opacity_effect = QGraphicsOpacityEffect(self._surface)
+        self._surface.setGraphicsEffect(self._opacity_effect)
+        self._opacity_effect.setOpacity(0.0)
+        self.setFixedSize(self._surface.size())
+        self._position_on_screen()
+
     def _position_on_screen(self):
         screen = QApplication.primaryScreen()
         if not screen:
@@ -422,19 +442,34 @@ class ToastNotification(QWidget):
         x = rect.x() + (rect.width() - self.width()) // 2
         y = rect.y() + top_margin
         self._target_pos = QPoint(x, y)
-        self.move(x, rect.y() - self.height() - 20)
 
     def show_with_animation(self):
         """Mostra o toast com slide do topo ate a posicao final."""
+        self.move(self._target_pos)
+        self._surface.move(0, -self._SLIDE_OFFSET)
         self.show()
         self.raise_()
+        QTimer.singleShot(0, self._run_slide_in)
 
-        self._slide_anim = QPropertyAnimation(self, b"pos")
+    def _run_slide_in(self):
+        # Anima o conteúdo interno: no Linux/Wayland o WM ignora move() da janela top-level.
+        self._surface.move(0, -self._SLIDE_OFFSET)
+        self._opacity_effect.setOpacity(0.0)
+
+        self._slide_anim = QPropertyAnimation(self._surface, b"pos", self)
         self._slide_anim.setDuration(360)
-        self._slide_anim.setStartValue(self.pos())
-        self._slide_anim.setEndValue(self._target_pos)
+        self._slide_anim.setStartValue(QPoint(0, -self._SLIDE_OFFSET))
+        self._slide_anim.setEndValue(QPoint(0, 0))
         self._slide_anim.setEasingCurve(QEasingCurve.OutCubic)
+
+        self._fade_anim = QPropertyAnimation(self._opacity_effect, b"opacity", self)
+        self._fade_anim.setDuration(360)
+        self._fade_anim.setStartValue(0.0)
+        self._fade_anim.setEndValue(1.0)
+        self._fade_anim.setEasingCurve(QEasingCurve.OutCubic)
+
         self._slide_anim.start()
+        self._fade_anim.start()
 
         QTimer.singleShot(self._duration_ms, self.close)
 
@@ -805,16 +840,9 @@ class TempMailShortcutGUI(QMainWindow):
         layout.addWidget(api_card)
 
         # Seção: Nome
-        name_card = ModernCard("Nome")
-        name_card.layout.setSpacing(8)
-        name_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-
-        self.name_counter_label = QLabel()
-        self.name_counter_label.setFont(QFont('Consolas', 8))
-        self.name_counter_label.setStyleSheet(f"color: {COLORS['fg']}; background: transparent; border: none;")
-        self.name_counter_label.setWordWrap(True)
-        self.name_counter_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        name_card.layout.addWidget(self.name_counter_label)
+        self.name_card = ModernCard("Nome")
+        self.name_card.layout.setSpacing(8)
+        self.name_card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         name_row = QHBoxLayout()
         name_row.setContentsMargins(0, 0, 0, 0)
@@ -839,33 +867,19 @@ class TempMailShortcutGUI(QMainWindow):
 
         name_row.addWidget(self.name_input, 1)
         name_row.addWidget(name_save_btn)
-        name_card.layout.addLayout(name_row)
+        self.name_card.layout.addLayout(name_row)
 
-        self.name_random_checkbox = QCheckBox("Gerar nome aleatório")
-        self.name_random_checkbox.setFont(QFont('Segoe UI', 9))
-        self.name_random_checkbox.setCursor(QCursor(Qt.PointingHandCursor))
-        self.name_random_checkbox.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.name_random_checkbox.setChecked(bool(self.config_manager.get('name.random_enabled', False)))
-        self.name_random_checkbox.setStyleSheet(
-            f"QCheckBox {{ color: {COLORS['fg']}; background-color: transparent; border: none; padding: 0; margin: 0; }}"
-            f"QCheckBox::indicator {{ width: 14px; height: 14px; border-radius: 3px; border: 1px solid {COLORS['border']}; background-color: transparent; }}"
-            f"QCheckBox::indicator:checked {{ border: 1px solid {COLORS['success']}; background: {COLORS['success']}; }}"
-        )
-        self.name_random_checkbox.stateChanged.connect(self._save_name_random_status)
-        name_card.layout.addWidget(self.name_random_checkbox)
-
-        reset_name_btn = QPushButton("Resetar contador")
+        reset_name_btn = QPushButton("Resetar contador no NOme")
         reset_name_btn.setMinimumHeight(30)
         reset_name_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         reset_name_btn.setCursor(QCursor(Qt.PointingHandCursor))
         reset_name_btn.clicked.connect(self._reset_name_counter)
 
-        name_card.layout.addWidget(self.name_counter_label)
-        name_card.layout.addWidget(reset_name_btn)
+        self.name_card.layout.addWidget(reset_name_btn)
 
         self._refresh_name_status()
 
-        layout.addWidget(name_card)
+        layout.addWidget(self.name_card)
         
         # Seção: Status
         status_card = ModernCard("Status")
@@ -910,6 +924,18 @@ class TempMailShortcutGUI(QMainWindow):
         self.startup_checkbox.setCursor(QCursor(Qt.PointingHandCursor))
         self.startup_checkbox.stateChanged.connect(self._toggle_startup_with_os)
         status_card.layout.addWidget(self.startup_checkbox)
+
+        self.name_random_checkbox = QCheckBox("Gerar nome aleatório")
+        self.name_random_checkbox.setFont(QFont('Segoe UI', 9))
+        self.name_random_checkbox.setStyleSheet(
+            f"QCheckBox {{ color: {COLORS['fg']}; background: transparent; border: none; font-weight: 700; }}"
+            f"QCheckBox::indicator {{ width: 14px; height: 14px; border-radius: 3px; border: 1px solid {COLORS['border']}; background: transparent; }}"
+            f"QCheckBox::indicator:checked {{ border: 1px solid {COLORS['success']}; background: {COLORS['success']}; }}"
+        )
+        self.name_random_checkbox.setCursor(QCursor(Qt.PointingHandCursor))
+        self.name_random_checkbox.setChecked(bool(self.config_manager.get('name.random_enabled', False)))
+        self.name_random_checkbox.stateChanged.connect(self._save_name_random_status)
+        status_card.layout.addWidget(self.name_random_checkbox)
         
         layout.addWidget(status_card)
         
@@ -1331,11 +1357,11 @@ class TempMailShortcutGUI(QMainWindow):
             counter = int(self.config_manager.get('name.counter', 0) or 0)
             base_name = str(self.config_manager.get('name.base', '') or '').strip()
             if random_enabled:
-                preview = "nome aleatório de Cyberpunk 2077"
+                preview = "Nome Aleatório"
             else:
                 roman = self._roman_numeral(max(counter, 0) + 1)
                 preview = f"{(base_name or 'Defina um nome base')} {roman}".strip()
-            self.name_counter_label.setText(f"Nome - Próximo: {preview}")
+            self.name_card.set_title(f"Nome - Próximo: {preview}")
         except Exception:
             pass
     
