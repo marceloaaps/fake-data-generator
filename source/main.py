@@ -1,12 +1,12 @@
 """
-Aplicativo Temp Mail Shortcut - Gerador de dados temporários
+Aplicativo Fake Data Generator - Gerador de dados temporários
 Gera: Email temporário, CPF e CEP
 Copia automaticamente para o clipboard
 """
 import sys
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QFont
-from src.gui_qt5 import TempMailShortcutGUI, STYLESHEET, IconManager, get_app_icon
+from src.gui_qt5 import FakeDataGeneratorGUI, STYLESHEET, IconManager, get_app_icon
 
 
 def main():
@@ -23,8 +23,8 @@ def main():
     
     # Cria a interface gráfica
     # Deixa o repositório de configuração decidir o local padrão
-    # (ou usar TEMPMAIL_CONFIG_DIR quando definido pelo wrapper/build)
-    window = TempMailShortcutGUI(config_path=None)
+    # (ou usar FAKE_DATA_GENERATOR_CONFIG_DIR quando definido pelo wrapper/build)
+    window = FakeDataGeneratorGUI(config_path=None)
     window.show()
     
     # Executa o loop da aplicação

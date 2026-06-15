@@ -63,7 +63,7 @@ def setup_project():
 def main():
     """Executa o setup completo"""
     print("=" * 50)
-    print("🚀 Instalação - Temp Mail Shortcut")
+    print("🚀 Instalação - Fake Data Generator")
     print("=" * 50)
     
     check_system_requirements()

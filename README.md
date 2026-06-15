@@ -11,7 +11,7 @@ Um aplicativo em Python que gera dados temporários (Email, CPF, CEP) e os copia
 - **Interface Gráfica Moderna**: Design escuro inspirado no GitHub, tema PyQt5
 - **Atalhos Globais**: Use atalhos de teclado (Ctrl+Shift+E, etc.) mesmo fora do aplicativo
 - **Bandeja do Sistema**: Minimize para a bandeja e minimize/feche com popup confirmação
-- **Configuração Oculta**: Arquivo de config salvo em local seguro (`%APPDATA%\TempMailShortcut` no Windows, `~/.local/share/` no Linux)
+- **Configuração Oculta**: Arquivo de config salvo em local seguro (`%APPDATA%\FakeDataGenerator` no Windows, `~/.local/share/` no Linux)
 - **Multiplataforma**: Executável para Windows (`.exe`) e AppImage para Linux (distribuível único)
 - **Autostart**: Opção para inicializar com o sistema operacional
 
@@ -31,21 +31,21 @@ Um aplicativo em Python que gera dados temporários (Email, CPF, CEP) e os copia
 ### Opção 1: Executável pré-compilado (recomendado para usuários)
 
 #### Windows
-1. Baixe `TempMailShortcut.exe` da pasta `dist/`
+1. Baixe `FakeDataGenerator.exe` da pasta `dist/`
 2. Execute o arquivo
 3. Na primeira execução, configure sua chave de API RapidAPI
 
 #### Linux
-1. Baixe `TempMailShortcut-x86_64.AppImage` (gerado via `build_appimage.sh`)
-2. Torne executável: `chmod +x TempMailShortcut-x86_64.AppImage`
-3. Execute: `./TempMailShortcut-x86_64.AppImage`
+1. Baixe `FakeDataGenerator-x86_64.AppImage` (gerado via `build_appimage.sh`)
+2. Torne executável: `chmod +x FakeDataGenerator-x86_64.AppImage`
+3. Execute: `./FakeDataGenerator-x86_64.AppImage`
 
 ### Opção 2: Rodar a partir do código-fonte (para desenvolvedores)
 
 1. Clone ou baixe o projeto
 ```bash
 git clone <seu-repositório>
-cd temp-mail-shortcut
+cd fake-data-generator
 ```
 
 2. Instale as dependências (em um venv)
@@ -80,7 +80,7 @@ python main.py
 ## 📁 Estrutura de Pastas
 
 ```
-temp-mail-shortcut/
+fake-data-generator/
 ├── source/                    # Código-fonte e scripts de build
 │   ├── src/                   # Código principal (DDD architecture)
 │   │   ├── application/       # Casos de uso
@@ -93,10 +93,10 @@ temp-mail-shortcut/
 │   ├── build.py               # Script para gerar .exe (Windows)
 │   ├── install.py             # Instalador Python
 │   ├── requirements.txt       # Dependências do projeto
-│   └── TempMailShortcut.spec  # Especificação PyInstaller
+│   └── FakeDataGenerator.spec  # Especificação PyInstaller
 ├── dist/                      # Artefatos de build (ignorado no git)
-│   ├── TempMailShortcut.exe   # Executável Windows
-│   └── TempMailShortcut.cmd   # Wrapper Windows (define config dir)
+│   ├── FakeDataGenerator.exe   # Executável Windows
+│   └── FakeDataGenerator.cmd   # Wrapper Windows (define config dir)
 ├── build_appimage.sh          # Script para gerar AppImage (Linux)
 ├── INSTALL_LINUX.md           # Documentação de instalação no Linux
 └── README.md                  # Este arquivo
@@ -105,8 +105,8 @@ temp-mail-shortcut/
 ## 💾 Arquivo de Configuração
 
 O arquivo `config.json` é salvo automaticamente em um local oculto:
-- **Windows**: `%APPDATA%\TempMailShortcut\config.json`
-- **Linux**: `~/.local/share/temp-mail-shortcut/.config/config.json` (se instalado via script) ou conforme `TEMPMAIL_CONFIG_DIR`
+- **Windows**: `%APPDATA%\FakeDataGenerator\config.json`
+- **Linux**: `~/.local/share/fake-data-generator/.config/config.json` (se instalado via script) ou conforme `FAKE_DATA_GENERATOR_CONFIG_DIR`
 
 Conteúdo padrão:
 ```json
@@ -134,9 +134,9 @@ Conteúdo padrão:
 }
 ```
 
-**Variável de ambiente**: você pode definir `TEMPMAIL_CONFIG_DIR` para usar um diretório de configuração customizado:
+**Variável de ambiente**: você pode definir `FAKE_DATA_GENERATOR_CONFIG_DIR` para usar um diretório de configuração customizado:
 ```bash
-export TEMPMAIL_CONFIG_DIR="/caminho/customizado"
+export FAKE_DATA_GENERATOR_CONFIG_DIR="/caminho/customizado"
 python main.py
 ```
 
@@ -155,7 +155,7 @@ pip install -r requirements.txt pyinstaller
 python build.py
 ```
 
-Resultado: `source/dist/TempMailShortcut.exe` e wrapper `TempMailShortcut.cmd`
+Resultado: `source/dist/FakeDataGenerator.exe` e wrapper `FakeDataGenerator.cmd`
 
 ### Linux (AppImage)
 
@@ -173,13 +173,13 @@ chmod +x build_appimage.sh
 ./build_appimage.sh
 ```
 
-Resultado: `TempMailShortcut-x86_64.AppImage` na raiz do projeto
+Resultado: `FakeDataGenerator-x86_64.AppImage` na raiz do projeto
 
 ## 🎮 Como Usar
 
 ### Executar o aplicativo
-- **Windows**: Duplo clique em `TempMailShortcut.exe` ou `TempMailShortcut.cmd`
-- **Linux**: `./TempMailShortcut-x86_64.AppImage` ou `python main.py` (modo desenvolvimento)
+- **Windows**: Duplo clique em `FakeDataGenerator.exe` ou `FakeDataGenerator.cmd`
+- **Linux**: `./FakeDataGenerator-x86_64.AppImage` ou `python main.py` (modo desenvolvimento)
 
 ### Configurar API (primeira vez)
 1. Clique em **⚙️ Configurações** (ícone de engrenagem no header)
@@ -221,9 +221,9 @@ Use dados temporários **de qualquer lugar** sem cliques:
 Para instruções detalhadas de instalação, autostart, desinstalação e build no Linux, veja [INSTALL_LINUX.md](INSTALL_LINUX.md).
 
 Resumo:
-- **Usuário**: `bash source/install_linux.sh` → instala em `~/.local/share/temp-mail-shortcut`
-- **System-wide**: `sudo bash source/install_linux.sh --system` → instala em `/opt/temp-mail-shortcut`
-- **AppImage**: `./build_appimage.sh` → gera `TempMailShortcut-x86_64.AppImage`
+- **Usuário**: `bash source/install_linux.sh` → instala em `~/.local/share/fake-data-generator`
+- **System-wide**: `sudo bash source/install_linux.sh --system` → instala em `/opt/fake-data-generator`
+- **AppImage**: `./build_appimage.sh` → gera `FakeDataGenerator-x86_64.AppImage`
 
 ## 🔧 Troubleshooting
 
@@ -250,7 +250,7 @@ Resumo:
   python source/main.py
   
   # AppImage:
-  ./TempMailShortcut-x86_64.AppImage
+  ./FakeDataGenerator-x86_64.AppImage
   ```
 
 ## 📦 Dependências

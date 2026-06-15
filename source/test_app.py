@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script de testes para o projeto Temp Mail Shortcut.
+Script de testes para o projeto Fake Data Generator.
 Executa testes unitários dos componentes principais.
 """
 import sys
@@ -146,7 +146,7 @@ class TestShortcutManager(unittest.TestCase):
 def run_tests():
     """Executa todos os testes"""
     print("=" * 50)
-    print("[TEST] Executando testes - Temp Mail Shortcut")
+    print("[TEST] Executando testes - Fake Data Generator")
     print("=" * 50)
     
     loader = unittest.TestLoader()

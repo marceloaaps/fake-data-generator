@@ -21,18 +21,18 @@ class FileConfigRepository(IConfigRepository):
         """
         # Priority for config path:
         # 1. explicit config_path argument
-        # 2. environment variable TEMPMAIL_CONFIG_DIR
+        # 2. environment variable FAKE_DATA_GENERATOR_CONFIG_DIR
         # 3. platform default (AppData on Windows, hidden folder in home on *nix)
-        env_path = os.environ.get('TEMPMAIL_CONFIG_DIR')
+        env_path = os.environ.get('FAKE_DATA_GENERATOR_CONFIG_DIR')
         if config_path is not None:
             self.config_dir = Path(config_path)
         elif env_path:
             self.config_dir = Path(env_path)
         else:
             self.config_dir = (
-                Path(os.environ.get('APPDATA', Path.home() / 'AppData' / 'Roaming')) / 'TempMailShortcut'
+                Path(os.environ.get('APPDATA', Path.home() / 'AppData' / 'Roaming')) / 'FakeDataGenerator'
                 if os.name == 'nt'
-                else Path.home() / '.tempmail-shortcut'
+                else Path.home() / '.fake-data-generator'
             )
         
         

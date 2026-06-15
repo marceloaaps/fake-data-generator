@@ -205,7 +205,7 @@ def get_app_icon_path() -> Optional[Path]:
     """Resolve the best application icon path available on disk."""
     candidates = []
 
-    env_icon = os.environ.get("TEMPMAIL_ICON_PATH")
+    env_icon = os.environ.get("FAKE_DATA_GENERATOR_ICON_PATH")
     if env_icon:
         candidates.append(Path(env_icon))
 
@@ -537,7 +537,7 @@ class TitleBar(QWidget):
 
     def _open_project_link(self):
         import webbrowser
-        webbrowser.open('https://github.com/marceloaaps/temp-mail-shortcut')
+        webbrowser.open('https://github.com/marceloaaps/fake-data-generator')
 
     def _style_title_button(self, btn: QPushButton, close: bool = False):
         # white icon, transparent background; hover light white, close hover red
@@ -595,7 +595,7 @@ class TitleBar(QWidget):
 
 
 
-class TempMailShortcutGUI(QMainWindow):
+class FakeDataGeneratorGUI(QMainWindow):
     """Interface gráfica moderna com PyQt5"""
     
     def __init__(self, config_path: str = None):
@@ -719,7 +719,7 @@ class TempMailShortcutGUI(QMainWindow):
 
             self.tray_icon.setContextMenu(tray_menu)
             self.tray_icon.activated.connect(self._on_tray_activated)
-            self.tray_icon.setToolTip('Temp Mail Shortcut')
+            self.tray_icon.setToolTip('Fake Data Generator')
             self.tray_icon.show()
         except Exception:
             self.tray_icon = None
@@ -1225,10 +1225,10 @@ class TempMailShortcutGUI(QMainWindow):
         if os.name == 'nt':
             appdata = Path(os.environ.get('APPDATA', ''))
             startup_dir = appdata / 'Microsoft' / 'Windows' / 'Start Menu' / 'Programs' / 'Startup'
-            return startup_dir / 'TempMailShortcut.cmd'
+            return startup_dir / 'FakeDataGenerator.cmd'
 
         # Linux: .desktop em ~/.config/autostart
-        return Path.home() / '.config' / 'autostart' / 'temp-mail-shortcut.desktop'
+        return Path.home() / '.config' / 'autostart' / 'fake-data-generator.desktop'
 
     def _enable_startup_with_os(self):
         """Cria entrada de inicialização automática no Windows/Linux."""
@@ -1256,7 +1256,7 @@ class TempMailShortcutGUI(QMainWindow):
         desktop_content = (
             "[Desktop Entry]\n"
             "Type=Application\n"
-            "Name=Temp Mail Shortcut\n"
+            "Name=Fake Data Generator\n"
             f"Exec={exec_cmd}\n"
             f"Path={work_dir}\n"
             "X-GNOME-Autostart-enabled=true\n"
@@ -1554,7 +1554,7 @@ class TempMailShortcutGUI(QMainWindow):
                 header_layout.setContentsMargins(8, 4, 8, 4)
                 header_layout.setSpacing(8)
 
-                title = QLabel("Temp Mail Shortcut")
+                title = QLabel("Fake Data Generator")
                 title.setFont(QFont('Segoe UI', 9))
                 title.setStyleSheet(f"color: {COLORS['fg']}; background: transparent; border: none; padding: 0; margin: 0;")
                 header_layout.addWidget(title)

@@ -1,6 +1,6 @@
 # Instalação no Linux
 
-Este documento descreve como instalar e executar o projeto Temp Mail Shortcut em sistemas Linux (usuário e sistema), como habilitar inicialização automática e como gerar um binário com o PyInstaller.
+Este documento descreve como instalar e executar o projeto Fake Data Generator em sistemas Linux (usuário e sistema), como habilitar inicialização automática e como gerar um binário com o PyInstaller.
 
 ## Pré-requisitos
 
@@ -26,28 +26,28 @@ bash install_linux.sh
 ```
 
 O script fará o seguinte por padrão:
-- Copiará o conteúdo do projeto para `~/.local/share/temp-mail-shortcut`.
-- Criará um virtualenv em `~/.local/share/temp-mail-shortcut/.venv`.
+- Copiará o conteúdo do projeto para `~/.local/share/fake-data-generator`.
+- Criará um virtualenv em `~/.local/share/fake-data-generator/.venv`.
 - Instalrá as dependências do `requirements.txt` nesse venv.
-- Criará um wrapper executável em `~/.local/bin/temp-mail-shortcut`.
-- Criará a entrada desktop em `~/.local/share/applications/temp-mail-shortcut.desktop`.
+- Criará um wrapper executável em `~/.local/bin/fake-data-generator`.
+- Criará a entrada desktop em `~/.local/share/applications/fake-data-generator.desktop`.
 
 ### Local do arquivo de configuração (oculto)
 
 Por padrão, o instalador coloca a configuração da aplicação em um local não visível diretamente ao usuário:
 
-- No modo *user* o wrapper exporta `TEMPMAIL_CONFIG_DIR` apontando para:
-  `~/.local/share/temp-mail-shortcut/.config`
-- No modo *system* (instalação em `/opt`) o wrapper exporta `TEMPMAIL_CONFIG_DIR` apontando para:
-  `/opt/temp-mail-shortcut/.config`
+- No modo *user* o wrapper exporta `FAKE_DATA_GENERATOR_CONFIG_DIR` apontando para:
+  `~/.local/share/fake-data-generator/.config`
+- No modo *system* (instalação em `/opt`) o wrapper exporta `FAKE_DATA_GENERATOR_CONFIG_DIR` apontando para:
+  `/opt/fake-data-generator/.config`
 
-A aplicação agora respeita a variável de ambiente `TEMPMAIL_CONFIG_DIR`. Isso permite que o diretório de configuração fique dentro da pasta de instalação (oculto) em vez de ficar diretamente em `~/.config` ou visível na home do usuário.
+A aplicação agora respeita a variável de ambiente `FAKE_DATA_GENERATOR_CONFIG_DIR`. Isso permite que o diretório de configuração fique dentro da pasta de instalação (oculto) em vez de ficar diretamente em `~/.config` ou visível na home do usuário.
 
-Se desejar um local diferente, você pode definir `TEMPMAIL_CONFIG_DIR` manualmente antes de executar o wrapper, por exemplo:
+Se desejar um local diferente, você pode definir `FAKE_DATA_GENERATOR_CONFIG_DIR` manualmente antes de executar o wrapper, por exemplo:
 
 ```bash
-export TEMPMAIL_CONFIG_DIR="$HOME/.config/TempMailShortcut"
-temp-mail-shortcut
+export FAKE_DATA_GENERATOR_CONFIG_DIR="$HOME/.config/FakeDataGenerator"
+fake-data-generator
 ```
 
 2. Habilitar autostart (opcional):
@@ -61,9 +61,9 @@ Isso copia o `.desktop` para `~/.config/autostart` para iniciar automaticamente 
 3. Executar a aplicação:
 
 ```bash
-~/.local/bin/temp-mail-shortcut
+~/.local/bin/fake-data-generator
 # ou, se ~/.local/bin estiver no PATH:
-temp-mail-shortcut
+fake-data-generator
 ```
 
 ## Instalação system-wide (requer sudo)
@@ -72,7 +72,7 @@ temp-mail-shortcut
 sudo bash install_linux.sh --system
 ```
 
-Com essa opção o projeto será copiado para `/opt/temp-mail-shortcut`, será criado um venv em `/opt/temp-mail-shortcut/.venv` e será criado um wrapper em `/usr/local/bin/temp-mail-shortcut`. A entrada desktop será instalada em `/usr/share/applications/`.
+Com essa opção o projeto será copiado para `/opt/fake-data-generator`, será criado um venv em `/opt/fake-data-generator/.venv` e será criado um wrapper em `/usr/local/bin/fake-data-generator`. A entrada desktop será instalada em `/usr/share/applications/`.
 
 ## Gerar binário (PyInstaller)
 
@@ -81,7 +81,7 @@ Se quiser distribuir/rodar sem Python instalado, gere um binário na mesma plata
 ```bash
 # ative o venv (opcional) e rode
 python build.py
-# resultado em dist/TempMailShortcut  (Linux) ou dist/TempMailShortcut.exe (Windows)
+# resultado em dist/FakeDataGenerator  (Linux) ou dist/FakeDataGenerator.exe (Windows)
 ```
 
 Observações:
@@ -102,7 +102,7 @@ Para remover instalação system-wide (quando instalado com `--system`):
 sudo bash install_linux.sh --uninstall
 ```
 
-O script tentará remover arquivos de `~/.local/share/temp-mail-shortcut`, `~/.local/bin/temp-mail-shortcut`, `~/.local/share/applications/temp-mail-shortcut.desktop` e `~/.config/autostart/`.
+O script tentará remover arquivos de `~/.local/share/fake-data-generator`, `~/.local/bin/fake-data-generator`, `~/.local/share/applications/fake-data-generator.desktop` e `~/.config/autostart/`.
 
 ## Permissões e atalhos globais
 
@@ -151,7 +151,7 @@ Sem permissão adequada para `/dev/uinput`, ainda pode aparecer erro de root; a�
 Para confirmar que o problema é permissão, teste **só uma vez** com privilégios elevados (não use no dia a dia):
 
 ```bash
-sudo ~/.local/bin/temp-mail-shortcut
+sudo ~/.local/bin/fake-data-generator
 # ou, a partir do código: sudo python source/main.py
 ```
 
@@ -248,17 +248,17 @@ chmod +x build_appimage.sh
 
 O que o script faz:
 - Roda `python -m PyInstaller` em `source/` (onefile, `--windowed`, `--add-data=src:src`, `assets:assets`, `--icon` com `assets/app-icon.ico` se existir)
-- Monta `build/appimage/TempMailShortcut.AppDir` (temporário; apagado no próximo build) com `usr/bin/`, `AppRun`, `.desktop` na raiz e **cópia** de `source/assets/app-icon.png` renomeada para `TempMailShortcut.png` (exigência do `Icon=` + appimagetool)
-- Baixa `appimagetool` em `tools/` (se ainda não existir) e gera `TempMailShortcut-x86_64.AppImage` na raiz
+- Monta `build/appimage/FakeDataGenerator.AppDir` (temporário; apagado no próximo build) com `usr/bin/`, `AppRun`, `.desktop` na raiz e **cópia** de `source/assets/app-icon.png` renomeada para `FakeDataGenerator.png` (exigência do `Icon=` + appimagetool)
+- Baixa `appimagetool` em `tools/` (se ainda não existir) e gera `FakeDataGenerator-x86_64.AppImage` na raiz
 
-Ao final um arquivo `TempMailShortcut-x86_64.AppImage` será gerado na raiz do projeto.
+Ao final um arquivo `FakeDataGenerator-x86_64.AppImage` será gerado na raiz do projeto.
 
 Notas:
-- O ícone do AppImage vem de `source/assets/app-icon.png` (copiado para a raiz do AppDir como `TempMailShortcut.png`). O PyInstaller usa `source/assets/app-icon.ico` como `--icon`, se existir.
+- O ícone do AppImage vem de `source/assets/app-icon.png` (copiado para a raiz do AppDir como `FakeDataGenerator.png`). O PyInstaller usa `source/assets/app-icon.ico` como `--icon`, se existir.
 - Para distribuir, basta tornar o AppImage executável e compartilhar:
 
 ```bash
-chmod +x TempMailShortcut-x86_64.AppImage
-./TempMailShortcut-x86_64.AppImage
+chmod +x FakeDataGenerator-x86_64.AppImage
+./FakeDataGenerator-x86_64.AppImage
 ```
 

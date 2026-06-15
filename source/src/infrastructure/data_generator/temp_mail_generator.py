@@ -443,7 +443,7 @@ class TempMailDataGenerator(IDataGenerator):
             "X-RapidAPI-Key": self.rapidapi_key,
             "X-RapidAPI-Host": self.rapidapi_host,
             "Accept": "application/json",
-            "User-Agent": "TempMailShortcut/1.0",
+            "User-Agent": "FakeDataGenerator/1.0",
         }
         
         try:

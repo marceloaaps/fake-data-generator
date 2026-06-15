@@ -31,7 +31,7 @@ sg.set_options(
 )
 
 
-class TempMailShortcutGUI:
+class FakeDataGeneratorGUI:
     """Interface gráfica do aplicativo com design moderno e barra de título customizada"""
     
     def __init__(self, config_path: str = None):
@@ -331,7 +331,7 @@ class TempMailShortcutGUI:
         
         left_column = [
             # Seção 1: Texto e Descrição
-            *self._create_section_header('Temp Mail Shortcut'),
+            *self._create_section_header('Fake Data Generator'),
             [
                 sg.Text(
                     'Gerador rápido de dados\ntemporários com um clique\nou atalho global',

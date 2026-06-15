@@ -61,7 +61,7 @@ def build_exe():
         "PyInstaller",
         "--onefile",           # Cria um arquivo único
         "--windowed",          # Sem console
-        "--name=TempMailShortcut",
+        "--name=FakeDataGenerator",
         f"--add-data=src{os.pathsep}src",  # Inclui pasta src (usa separador correto por SO)
         "--distpath=dist",
         "--workpath=build",
@@ -77,7 +77,7 @@ def build_exe():
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True, cwd=project_dir)
         print("✅ Build concluído com sucesso!")
-        exe_name = "TempMailShortcut.exe" if os.name == "nt" else "TempMailShortcut"
+        exe_name = "FakeDataGenerator.exe" if os.name == "nt" else "FakeDataGenerator"
         print(f"\nExecutável criado em: {project_dir / 'dist' / exe_name}")
         print("\nPróximos passos:")
         print("1. Teste o executável")
@@ -86,13 +86,13 @@ def build_exe():
         # On Windows, create a small .cmd wrapper that sets a config dir in %APPDATA%
         try:
             dist_dir = project_dir / 'dist'
-            exe_path = dist_dir / 'TempMailShortcut.exe'
-            wrapper_path = dist_dir / 'TempMailShortcut.cmd'
+            exe_path = dist_dir / 'FakeDataGenerator.exe'
+            wrapper_path = dist_dir / 'FakeDataGenerator.cmd'
             if os.name == 'nt' and exe_path.exists():
                 with open(wrapper_path, 'w', newline='\r\n') as w:
                     w.write('@echo off\r\n')
-                    w.write('set "TEMPMAIL_CONFIG_DIR=%APPDATA%\\TempMailShortcut"\r\n')
-                    w.write('"%~dp0\\TempMailShortcut.exe" %*\r\n')
+                    w.write('set "FAKE_DATA_GENERATOR_CONFIG_DIR=%APPDATA%\\FakeDataGenerator"\r\n')
+                    w.write('"%~dp0\\FakeDataGenerator.exe" %*\r\n')
                 print(f"Criado wrapper Windows em: {wrapper_path}")
         except Exception:
             pass

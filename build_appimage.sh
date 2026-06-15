@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Gera TempMailShortcut-x86_64.AppImage na raiz do repositório.
+# Gera FakeDataGenerator-x86_64.AppImage na raiz do repositório.
 # Ícones: origem única em source/assets/; dentro do AppDir só há cópias exigidas pelo formato AppImage.
 #
 # O AppDir (pasta .AppDir) é temporário: fica em build/appimage/ e é apagado no início de cada build.
-# O ficheiro TempMailShortcut.png na raiz do AppDir é cópia de source/assets/app-icon.png porque o
-# .desktop usa Icon=TempMailShortcut e o appimagetool espera esse nome na raiz do AppDir — não duplica
+# O ficheiro FakeDataGenerator.png na raiz do AppDir é cópia de source/assets/app-icon.png porque o
+# .desktop usa Icon=FakeDataGenerator e o appimagetool espera esse nome na raiz do AppDir — não duplica
 # o repositório como “segunda fonte”; o binário empacotado já inclui assets/ via PyInstaller.
 #
 # Pré-requisitos: venv com source/requirements.txt (inclui pyinstaller).
@@ -15,7 +15,7 @@ set -euo pipefail
 BASE_DIR="$(cd "$(dirname "$0")" && pwd)"
 SOURCE_DIR="$BASE_DIR/source"
 ASSETS_DIR="$SOURCE_DIR/assets"
-NAME="TempMailShortcut"
+NAME="FakeDataGenerator"
 APPIMG_STAGING="$BASE_DIR/build/appimage"
 APPDIR="$APPIMG_STAGING/${NAME}.AppDir"
 TOOLS_DIR="$BASE_DIR/tools"
@@ -83,7 +83,7 @@ DESKTOP_ROOT="$APPDIR/$DESKTOP_NAME"
 cat > "$DESKTOP_ROOT" <<EOF
 [Desktop Entry]
 Type=Application
-Name=Temp Mail Shortcut
+Name=Fake Data Generator
 Comment=Gerador de dados temporários (email, CPF, CEP)
 Exec=$NAME
 Icon=$NAME
@@ -101,7 +101,7 @@ cat > "$APPDIR/AppRun" <<'APPRUN'
 SELF=$(readlink -f "$0")
 HERE=${SELF%/*}
 export PATH="${HERE}/usr/bin:${PATH}"
-exec "${HERE}/usr/bin/TempMailShortcut" "$@"
+exec "${HERE}/usr/bin/FakeDataGenerator" "$@"
 APPRUN
 chmod +x "$APPDIR/AppRun"
 
