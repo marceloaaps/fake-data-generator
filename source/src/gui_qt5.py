@@ -884,22 +884,6 @@ class FakeDataGeneratorGUI(QMainWindow):
         # Seção: Status
         status_card = ModernCard("Status")
         
-        status_layout = QHBoxLayout()
-        status_layout.setContentsMargins(0, 0, 0, 0)
-        status_layout.setSpacing(8)
-        self.status_indicator = QLabel("●")
-        self.status_indicator.setFont(QFont('Segoe UI', 14))
-        self.status_indicator.setStyleSheet(f"color: {COLORS['danger']}; background: transparent;")
-        
-        self.status_text = QLabel("Desativado")
-        self.status_text.setFont(QFont('Segoe UI', 9))
-        self.status_text.setStyleSheet(f"color: {COLORS['warning']}; background: transparent;")
-        
-        status_layout.addWidget(self.status_indicator)
-        status_layout.addWidget(self.status_text)
-        status_layout.addStretch()
-        
-        status_card.layout.addLayout(status_layout)
         
         # Checkbox ativar atalhos
         self.hotkeys_checkbox = QCheckBox("Ativar atalhos globais")
@@ -1160,47 +1144,48 @@ class FakeDataGeneratorGUI(QMainWindow):
             try:
                 self.shortcut_manager.start_monitoring()
                 self.is_monitoring = True
-                self.status_indicator.setText("●")
-                self.status_indicator.setStyleSheet(f"color: {COLORS['success']};")
-                self.status_text.setText("Ativado")
-                self.status_text.setStyleSheet(f"color: {COLORS['success']};")
+
                 self._add_shortcut_log("Atalhos globais ativados")
-                # Persistir estado
+
                 try:
                     self.config_manager.set('hotkeys_enabled', True)
                 except Exception:
                     pass
+
             except (LinuxGlobalHotkeyPermissionError, LinuxGlobalHotkeyDumpkeysError) as e:
                 self.hotkeys_checkbox.setChecked(False)
+
                 raw = str(e)
                 safe = raw.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 html = safe.replace("\n", "<br>")
+
                 title = (
                     "dumpkeys / consola (Linux)"
                     if isinstance(e, LinuxGlobalHotkeyDumpkeysError)
                     else "Atalhos globais no Linux"
                 )
+
                 self._show_message(title, html, "warning")
+
             except Exception as e:
                 self.hotkeys_checkbox.setChecked(False)
                 self._show_message("Erro", f"Erro ao ativar: {str(e)[:400]}", "error")
+
         else:
             try:
                 self.shortcut_manager.stop_monitoring()
                 self.is_monitoring = False
-                self.status_indicator.setText("●")
-                self.status_indicator.setStyleSheet(f"color: {COLORS['danger']};")
-                self.status_text.setText("Desativado")
-                self.status_text.setStyleSheet(f"color: {COLORS['warning']};")
+
                 self._add_shortcut_log("Atalhos globais desativados")
-                # Persistir estado
+
                 try:
                     self.config_manager.set('hotkeys_enabled', False)
                 except Exception:
                     pass
+
             except Exception as e:
                 self._show_message("Erro", f"Erro ao desativar: {str(e)[:50]}", "error")
-
+                
     def _toggle_startup_with_os(self):
         """Ativa/desativa inicialização automática com o sistema operacional."""
         enabled = self.startup_checkbox.isChecked()
