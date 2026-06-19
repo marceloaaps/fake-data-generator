@@ -869,7 +869,7 @@ class FakeDataGeneratorGUI(QMainWindow):
         name_row.addWidget(name_save_btn)
         self.name_card.layout.addLayout(name_row)
 
-        reset_name_btn = QPushButton("Resetar contador no NOme")
+        reset_name_btn = QPushButton("Resetar contador no Nome")
         reset_name_btn.setMinimumHeight(30)
         reset_name_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         reset_name_btn.setCursor(QCursor(Qt.PointingHandCursor))
