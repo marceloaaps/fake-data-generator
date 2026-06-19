@@ -303,13 +303,38 @@ class TempMailDataGenerator(IDataGenerator):
             }
 
     def generate_cnpj(self, formatted: bool = True) -> Dict[str, Optional[str]]:
-        """Gera CNPJ válido localmente."""
+        try:
+            response = requests.get(
+                "https://www.4devs.com.br/api/v1/cnpj",
+                params={"random": "true", "formatted": "false"},
+                timeout=3
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                cnpj_raw = data.get("cnpj", "").strip()
+
+                if cnpj_raw and len(re.sub(r"\D", "", cnpj_raw)) == 14:
+                    cnpj_raw = re.sub(r"\D", "", cnpj_raw)
+
+                    if formatted:
+                        return {
+                            "cnpj": f"{cnpj_raw[:2]}.{cnpj_raw[2:5]}.{cnpj_raw[5:8]}/{cnpj_raw[8:12]}-{cnpj_raw[12:]}",
+                            "error": None
+                        }
+
+                    return {"cnpj": cnpj_raw, "error": None}
+
+        except (requests.RequestException, Exception):
+            pass
+
+        # Fallback local
         try:
             cnpj_digits = self._generate_valid_cnpj_digits()
             cnpj = self._format_cnpj(cnpj_digits) if formatted else cnpj_digits
-            return {'cnpj': cnpj, 'error': None}
+            return {"cnpj": cnpj, "error": None}
         except Exception as e:
-            return {'cnpj': None, 'error': f'Erro ao gerar CNPJ: {str(e)}'}
+            return {"cnpj": None, "error": f"Erro ao gerar CNPJ: {str(e)}"}
 
     def generate_phone(self, formatted: bool = True) -> Dict[str, Optional[str]]:
         """Gera celular brasileiro válido."""

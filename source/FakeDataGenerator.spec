@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['main.py'],
+    ['E:\\Workspaces\\ws-py\\temp-mail-shortcut\\source\\main.py'],
     pathex=[],
     binaries=[],
     datas=[('src', 'src'), ('assets', 'assets')],
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['assets/app-icon.ico'],
+    icon=['E:\\Workspaces\\ws-py\\temp-mail-shortcut\\source\\assets\\app-icon.ico'],
 )
