@@ -9,7 +9,8 @@ Recomendado (Debian/Ubuntu):
 ```bash
 sudo apt update
 sudo apt install -y python3 python3-venv python3-dev build-essential \
-  libxcb-xinerama0 libxkbcommon-x11-0 libglu1-mesa rsync
+  libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+  libxcb-render-util0 libxcb-xinerama0 libxkbcommon-x11-0 libglu1-mesa rsync
 ```
 
 Observações:
@@ -121,16 +122,13 @@ pip install -r source/requirements.txt
 
 ### Erro «Failed to run dumpkeys» (mesmo com grupo `tty`)
 
-A biblioteca `keyboard` executa `dumpkeys --keys-only` para obter nomes de teclas. Isso usa o **mapa da consola virtual do kernel**, não o teclado do **Wayland**.
+A biblioteca `keyboard` executa `dumpkeys` para obter nomes de teclas (mapa da consola virtual do kernel).
 
 1. **Instale o pacote** que fornece `dumpkeys` (Ubuntu/Debian):
 
 ```bash
 sudo apt install -y kbd
-dumpkeys --keys-only | head
 ```
-
-Se este comando falhar no mesmo utilizador com que abre a app gráfica, o problema não é só «clicar em ativar» — o ambiente ainda não permite `dumpkeys`.
 
 2. **Grupo `tty`** (continua necessário na maioria dos sistemas):
 
@@ -138,11 +136,20 @@ Se este comando falhar no mesmo utilizador com que abre a app gráfica, o proble
 sudo usermod -aG tty "$USER"
 ```
 
-**Importante:** tem de **sair da sessão por completo** (ou reiniciar). Abrir um novo terminal não actualiza os grupos do processo do ambiente gráfico. `newgrp tty` só afecta aquele shell, não a janela do Qt.
+**Importante:** encerre a sessão por completo (ou reinicie) após adicionar o grupo.
 
-3. **Wayland (GNOME/Ubuntu por omissão):** mesmo com `tty` e `kbd`, `dumpkeys` **costuma falhar** ou ser pouco fiável. Solução prática: no **ecrã de login**, no menu (engrenagem), escolha **«Ubuntu em Xorg»** ou **«GNOME em Xorg»**, entre na sessão e volte a testar os atalhos globais.
+3. **Wayland / terminal sem TTY:** o comando `dumpkeys --keys-only | head` **falha** em muitos terminais (incl. integrados em IDEs) mesmo com `kbd` e `tty` corretos — o processo não tem consola associada. Isso **não** significa que os atalhos do app falham: desde a versão actual, o app redirecciona `dumpkeys` para a VT da sessão (`/dev/ttyN` via `loginctl`).
 
-4. Confirme `groups` na sessão onde corre o app: deve incluir **`tty`** e **`input`**.
+   Para diagnosticar manualmente, use a VT da sessão:
+
+```bash
+loginctl show-session "$XDG_SESSION_ID" -p TTY --value   # ex.: tty2
+dumpkeys --keys-only </dev/tty2 | head
+```
+
+4. **Ubuntu 26.04+:** não existe sessão «GNOME em Xorg»; o GNOME é Wayland-only. Os atalhos globais devem funcionar no Wayland com `kbd`, grupos `tty`/`input` e o workaround acima — **não** é necessário Xfce só por causa do `dumpkeys`.
+
+5. Confirme `groups`: deve incluir **`tty`** e **`input`**.
 
 Sem permissão adequada para `/dev/uinput`, ainda pode aparecer erro de root; aí vale a secção seguinte (udev + `input`).
 
@@ -220,6 +227,9 @@ O conteúdo canônico está em: [`scripts/udev/99-uinput-keyboard-hotkeys.rules`
 
 ## Problemas comuns
 
+- **`command not found: fake-data-generator`**: o wrapper fica em `~/.local/bin`. Adicione ao PATH (`export PATH="$HOME/.local/bin:$PATH"` no `~/.zshrc` ou `~/.bashrc`) ou use o caminho completo `~/.local/bin/fake-data-generator`.
+- **Qt: «Could not load the Qt platform plugin "xcb"»**: faltam bibliotecas `libxcb-*` do sistema — instale os pacotes dos pré-requisitos. Em sessão **Wayland**, o wrapper do instalador define `QT_QPA_PLATFORM=wayland` automaticamente.
+- **`dumpkeys | head` falha no terminal, mas o app abre**: normal em Wayland/terminais sem TTY; teste com `dumpkeys --keys-only </dev/tty2 | head` (ajuste `tty2`) ou use os atalhos directamente no app (há workaround automático).
 - Erro ao importar PyQt5: instale as dependências do sistema (veja pré-requisitos).
 - Erros no build do PyInstaller: verifique `build.py` e mensagens do PyInstaller; pode ser necessário adicionar hooks ou incluir dados adicionais.
 - Atalhos não funcionam: veja seção acima sobre permissões e teste com privilégios para diagnosticar.

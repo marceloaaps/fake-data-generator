@@ -3,6 +3,11 @@ Serviço de atalhos globais - Implementa IShortcutService.
 Adaptação do código original shortcut_manager.py
 """
 import sys
+
+from .linux_dumpkeys import apply_dumpkeys_workaround
+
+apply_dumpkeys_workaround()
+
 import keyboard
 from typing import Dict, Callable, Optional, List, Tuple
 from ...domain.interfaces.repositories import IShortcutService, ILogger
@@ -34,16 +39,16 @@ _LINUX_HOTKEY_HELP = (
 )
 
 _DUMPKEYS_HELP = (
-    "A biblioteca «keyboard» usa o comando «dumpkeys» (pacote kbd) para mapear nomes de teclas. "
-    "Ele lê o mapa da consola virtual do kernel, não do Wayland.\n\n"
+    "A biblioteca «keyboard» usa o comando «dumpkeys» (pacote kbd) para mapear nomes de teclas.\n\n"
     "O que verificar:\n"
-    "• Pacote: sudo apt install kbd — depois teste no terminal: dumpkeys --keys-only | head\n"
-    "• Grupo tty: sudo usermod -aG tty \"$USER\" — é obrigatório encerrar a sessão a fundo ou reiniciar; "
-    "«newgrp tty» no terminal não repassa o grupo à app gráfica.\n"
-    "• Sessão Wayland (GNOME/Ubuntu por omissão): «dumpkeys» falha com frequência. No ecrã de login, "
-    "abra o menu (ícone de engrenagem) e escolha «Ubuntu em Xorg» ou «GNOME em Xorg», depois volte a abrir o app.\n"
-    "• Confirme: groups (deve incluir tty e input).\n\n"
-    "Se nada disto resolver, use os botões da janela sem atalhos globais, ou considere outra biblioteca no futuro."
+    "• Pacote: sudo apt install kbd\n"
+    "• Grupo tty: sudo usermod -aG tty \"$USER\" — encerre a sessão por completo após adicionar.\n"
+    "• Grupo input + udev uinput (veja INSTALL_LINUX.md).\n"
+    "• Teste com a VT da sessão: dumpkeys --keys-only </dev/tty2 | head "
+    "(substitua tty2 pelo TTY de loginctl show-session \"$XDG_SESSION_ID\" -p TTY).\n"
+    "• «dumpkeys | head» sem redirecionamento falha em muitos terminais Wayland sem TTY — "
+    "isso não significa que os atalhos do app não funcionem.\n\n"
+    "Se nada disto resolver, use os botões da janela sem atalhos globais."
 )
 
 

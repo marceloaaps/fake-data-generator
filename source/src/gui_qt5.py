@@ -411,6 +411,7 @@ class _ToastSurface(QWidget):
 class ToastNotification(QWidget):
     """Notificacao discreta na tela, nao clicavel, com auto fechamento."""
     _SLIDE_OFFSET = 48
+    _MARGIN = 24
 
     def __init__(self, message: str, duration_ms: int = 5000, parent=None):
         super().__init__(parent)
@@ -418,6 +419,7 @@ class ToastNotification(QWidget):
         self._target_pos = QPoint(0, 0)
         self._slide_anim = None
         self._fade_anim = None
+        self._linux_overlay = sys.platform.startswith("linux")
         self.setWindowFlags(
             Qt.FramelessWindowHint | Qt.Tool | Qt.WindowStaysOnTopHint
         )
@@ -430,36 +432,79 @@ class ToastNotification(QWidget):
         self._opacity_effect = QGraphicsOpacityEffect(self._surface)
         self._surface.setGraphicsEffect(self._opacity_effect)
         self._opacity_effect.setOpacity(0.0)
-        self.setFixedSize(self._surface.size())
-        self._position_on_screen()
+
+        if self._linux_overlay:
+            self._sync_linux_host_geometry()
+        else:
+            self.setFixedSize(self._surface.size())
+            self._position_on_screen()
+
+    def _sync_linux_host_geometry(self):
+        """Linux/Wayland: host transparente cobre o ecra; o toast fica no canto."""
+        screen = QApplication.primaryScreen()
+        if not screen:
+            return
+        self.setGeometry(screen.availableGeometry())
+
+    def _surface_target_pos(self) -> QPoint:
+        margin = self._MARGIN
+        x = self.width() - self._surface.width() - margin
+        y = margin
+        return QPoint(max(0, x), y)
 
     def _position_on_screen(self):
+        """Posicionamento da janela compacta (Windows)."""
         screen = QApplication.primaryScreen()
         if not screen:
             return
         rect = screen.availableGeometry()
-        top_margin = 24
-        x = rect.x() + (rect.width() - self.width()) // 2
-        y = rect.y() + top_margin
+        margin = self._MARGIN
+        x = rect.x() + rect.width() - self.width() - margin
+        y = rect.y() + margin
         self._target_pos = QPoint(x, y)
+
+    def _apply_screen_position(self):
+        self._position_on_screen()
+        self.setGeometry(
+            self._target_pos.x(),
+            self._target_pos.y(),
+            self.width(),
+            self.height(),
+        )
 
     def show_with_animation(self):
         """Mostra o toast com slide do topo ate a posicao final."""
-        self.move(self._target_pos)
+        if self._linux_overlay:
+            self._sync_linux_host_geometry()
+            end_pos = self._surface_target_pos()
+            self._surface.move(end_pos.x(), end_pos.y() - self._SLIDE_OFFSET)
+            self.show()
+            self.raise_()
+            QTimer.singleShot(0, self._run_slide_in)
+            return
+
+        self._apply_screen_position()
         self._surface.move(0, -self._SLIDE_OFFSET)
         self.show()
         self.raise_()
+        QTimer.singleShot(0, self._apply_screen_position)
         QTimer.singleShot(0, self._run_slide_in)
 
     def _run_slide_in(self):
-        # Anima o conteúdo interno: no Linux/Wayland o WM ignora move() da janela top-level.
-        self._surface.move(0, -self._SLIDE_OFFSET)
+        if self._linux_overlay:
+            end_pos = self._surface_target_pos()
+            start_pos = QPoint(end_pos.x(), end_pos.y() - self._SLIDE_OFFSET)
+        else:
+            end_pos = QPoint(0, 0)
+            start_pos = QPoint(0, -self._SLIDE_OFFSET)
+
+        self._surface.move(start_pos)
         self._opacity_effect.setOpacity(0.0)
 
         self._slide_anim = QPropertyAnimation(self._surface, b"pos", self)
         self._slide_anim.setDuration(360)
-        self._slide_anim.setStartValue(QPoint(0, -self._SLIDE_OFFSET))
-        self._slide_anim.setEndValue(QPoint(0, 0))
+        self._slide_anim.setStartValue(start_pos)
+        self._slide_anim.setEndValue(end_pos)
         self._slide_anim.setEasingCurve(QEasingCurve.OutCubic)
 
         self._fade_anim = QPropertyAnimation(self._opacity_effect, b"opacity", self)
@@ -739,7 +784,7 @@ class FakeDataGeneratorGUI(QMainWindow):
             self.activateWindow()
         except Exception:
             pass
-    
+
     def _create_left_column(self) -> QVBoxLayout:
         """Cria coluna esquerda com API Key e Status"""
         layout = QVBoxLayout()
